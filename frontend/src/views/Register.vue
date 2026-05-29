@@ -31,21 +31,58 @@
             v-model="form.password"
             type="password"
             required
+            @input="validatePassword"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
           />
-          <div class="text-xs text-gray-500 mt-1 space-y-1">
-            <p>• 至少8个字符</p>
-            <p>• 包含至少一个大写字母</p>
-            <p>• 包含至少一个小写字母</p>
-            <p>• 包含至少一个数字</p>
-            <p>• 包含至少一个特殊字符 (!@#$%^&amp;*(),.?":{}|&lt;&gt;)</p>
+          <div class="mt-2 space-y-1">
+            <p class="text-xs text-gray-600 mb-2 font-medium">密码要求：</p>
+            <div class="flex items-center space-x-2">
+              <span class="text-lg" :class="passwordChecks.minLength ? 'text-green-500' : 'text-gray-400'">
+                {{ passwordChecks.minLength ? '✓' : '○' }}
+              </span>
+              <span class="text-xs" :class="passwordChecks.minLength ? 'text-green-600' : 'text-gray-500'">
+                至少8个字符
+              </span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-lg" :class="passwordChecks.hasUpperCase ? 'text-green-500' : 'text-gray-400'">
+                {{ passwordChecks.hasUpperCase ? '✓' : '○' }}
+              </span>
+              <span class="text-xs" :class="passwordChecks.hasUpperCase ? 'text-green-600' : 'text-gray-500'">
+                包含至少一个大写字母 (A-Z)
+              </span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-lg" :class="passwordChecks.hasLowerCase ? 'text-green-500' : 'text-gray-400'">
+                {{ passwordChecks.hasLowerCase ? '✓' : '○' }}
+              </span>
+              <span class="text-xs" :class="passwordChecks.hasLowerCase ? 'text-green-600' : 'text-gray-500'">
+                包含至少一个小写字母 (a-z)
+              </span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-lg" :class="passwordChecks.hasNumber ? 'text-green-500' : 'text-gray-400'">
+                {{ passwordChecks.hasNumber ? '✓' : '○' }}
+              </span>
+              <span class="text-xs" :class="passwordChecks.hasNumber ? 'text-green-600' : 'text-gray-500'">
+                包含至少一个数字 (0-9)
+              </span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-lg" :class="passwordChecks.hasSpecial ? 'text-green-500' : 'text-gray-400'">
+                {{ passwordChecks.hasSpecial ? '✓' : '○' }}
+              </span>
+              <span class="text-xs" :class="passwordChecks.hasSpecial ? 'text-green-600' : 'text-gray-500'">
+                包含至少一个特殊字符 (!@#$%^&*(),.?":{}|<>)
+              </span>
+            </div>
           </div>
         </div>
 
         <button
           type="submit"
-          :disabled="loading"
-          class="w-full bg-pink-600 text-white py-2 rounded-lg font-semibold hover:bg-pink-700 transition disabled:opacity-50"
+          :disabled="loading || !isPasswordValid"
+          class="w-full bg-pink-600 text-white py-2 rounded-lg font-semibold hover:bg-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ loading ? '注册中...' : '注册' }}
         </button>
@@ -66,7 +103,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -81,6 +118,27 @@ const form = reactive({
   password: '',
 })
 
+const passwordChecks = reactive({
+  minLength: false,
+  hasUpperCase: false,
+  hasLowerCase: false,
+  hasNumber: false,
+  hasSpecial: false,
+})
+
+const isPasswordValid = computed(() => {
+  return Object.values(passwordChecks).every(check => check === true)
+})
+
+function validatePassword() {
+  const password = form.password
+  passwordChecks.minLength = password.length >= 8
+  passwordChecks.hasUpperCase = /[A-Z]/.test(password)
+  passwordChecks.hasLowerCase = /[a-z]/.test(password)
+  passwordChecks.hasNumber = /[0-9]/.test(password)
+  passwordChecks.hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+}
+
 const handleRegister = async () => {
   try {
     loading.value = true
@@ -90,7 +148,12 @@ const handleRegister = async () => {
     await authStore.loadProfile()
     router.push('/couple-binding')
   } catch (err) {
-    error.value = err.response?.data?.error || '注册失败'
+    const errDetails = err.response?.data?.details
+    if (errDetails && Array.isArray(errDetails)) {
+      error.value = errDetails.join('；')
+    } else {
+      error.value = err.response?.data?.error || '注册失败'
+    }
   } finally {
     loading.value = false
   }
