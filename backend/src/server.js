@@ -1,10 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import userRoutes from './routes/userRoutes.js';
 import diaryRoutes from './routes/diaryRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/auth.js';
 import { initDB } from './config/db.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -77,6 +82,9 @@ app.use('/api/users/register', authLimiter);
 
 app.use('/uploads', express.static('uploads'));
 
+const publicPath = path.join(__dirname, '..', 'public');
+app.use(express.static(publicPath));
+
 app.use('/api/users', userRoutes);
 app.use('/api/diary', diaryRoutes);
 
@@ -86,6 +94,10 @@ app.get('/api/health', (req, res) => {
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
 });
 
 app.use(notFoundHandler);
