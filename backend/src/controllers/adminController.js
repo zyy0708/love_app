@@ -1,4 +1,4 @@
-import { get, all } from '../config/db.js';
+import { get, all, exec } from '../config/db.js';
 
 export const getDbInfo = async (req, res) => {
   try {
@@ -19,5 +19,21 @@ export const getDbInfo = async (req, res) => {
   } catch (error) {
     console.error('Error fetching db info:', error);
     res.status(500).json({ error: 'Failed to fetch database info' });
+  }
+};
+
+export const clearDatabase = async (req, res) => {
+  try {
+    exec('DELETE FROM diary_entries');
+    exec('DELETE FROM couples');
+    exec('DELETE FROM users');
+
+    res.json({ 
+      message: 'Database cleared successfully!',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error clearing database:', error);
+    res.status(500).json({ error: 'Failed to clear database' });
   }
 };
