@@ -171,25 +171,14 @@ CREATE INDEX IF NOT EXISTS idx_timeline_created ON timeline_feed(created_at);
 
 async function startServer() {
   try {
-    const dbPath = './data/couple_diary.db';
-    if (existsSync(dbPath)) {
-      console.log('⚠️ Deleting old database to fix issues...');
-      try {
-        unlinkSync(dbPath);
-        console.log('✓ Old database deleted');
-      } catch (e) {
-        console.warn('Could not delete old database:', e.message);
-      }
-    }
-    
     console.log('Initializing database...');
     await initDB();
     console.log('✓ Database initialized');
     
-    console.log('Creating database tables...');
+    console.log('Creating database tables if not exist...');
     exec(schema);
     exec(indexes);
-    console.log('✓ Database tables created');
+    console.log('✓ Database tables ready');
     
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`✓ Server running on http://0.0.0.0:${PORT}`);
