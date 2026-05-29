@@ -8,28 +8,14 @@ import userRoutes from './routes/userRoutes.js';
 import diaryRoutes from './routes/diaryRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/auth.js';
 import { initDB, exec } from './config/db.js';
+import { validateConfig } from './config/env.js';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config();
-
-const requiredEnvVars = [];
-const missingVars = requiredEnvVars.filter(key => !process.env[key]);
-
-if (missingVars.length > 0) {
-  console.error('❌ Missing required environment variables:');
-  missingVars.forEach(key => console.error(`   - ${key}`));
-  console.error('\nPlease set these variables in your .env file.');
-  process.exit(1);
-}
-
-if (process.env.NODE_ENV === 'production' && process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
-  console.error('❌ JWT_SECRET must be at least 32 characters in production');
-  process.exit(1);
-}
-
-console.log('✓ Environment configuration validated');
+validateConfig();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -67,9 +53,7 @@ const generalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many authentication attempts' });
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? true
-    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: true,
   credentials: true
 }));
 
