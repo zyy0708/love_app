@@ -1,0 +1,110 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import userRoutes from './routes/userRoutes.js';
+import diaryRoutes from './routes/diaryRoutes.js';
+import { errorHandler, notFoundHandler } from './middleware/auth.js';
+import { initDB } from './config/db.js';
+
+dotenv.config();
+
+const requiredEnvVars = [];
+const missingVars = requiredEnvVars.filter(key => !process.env[key]);
+
+if (missingVars.length > 0) {
+  console.error('❌ Missing required environment variables:');
+  missingVars.forEach(key => console.error(`   - ${key}`));
+  console.error('\nPlease set these variables in your .env file.');
+  process.exit(1);
+}
+
+if (process.env.NODE_ENV === 'production' && process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+  console.error('❌ JWT_SECRET must be at least 32 characters in production');
+  process.exit(1);
+}
+
+console.log('✓ Environment configuration validated');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const rateLimit = (options = {}) => {
+  const { windowMs = 15 * 60 * 1000, max = 100, message = 'Too many requests' } = options;
+  
+  const requests = new Map();
+  
+  return (req, res, next) => {
+    const key = req.ip;
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    
+    if (!requests.has(key)) {
+      requests.set(key, []);
+    }
+    
+    const requestTimes = requests.get(key).filter(time => time > windowStart);
+    requests.set(key, requestTimes);
+    
+    if (requestTimes.length >= max) {
+      return res.status(429).json({ 
+        error: message,
+        retryAfter: Math.ceil(windowMs / 1000)
+      });
+    }
+    
+    requestTimes.push(now);
+    next();
+  };
+};
+
+const generalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many authentication attempts' });
+
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.ALLOWED_ORIGINS?.split(',') 
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true
+}));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+app.use(generalLimiter);
+
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/register', authLimiter);
+
+app.use('/uploads', express.static('uploads'));
+
+app.use('/api/users', userRoutes);
+app.use('/api/diary', diaryRoutes);
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+async function startServer() {
+  try {
+    console.log('Initializing database...');
+    await initDB();
+    console.log('✓ Database initialized');
+    
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✓ Server running on http://0.0.0.0:${PORT}`);
+      console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "cd backend && npm start",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "services": [
+    {
+      "name": "couple-diary-api",
+      "src": "backend",
+      "build": {
+        "buildCommand": "cd backend && npm install && node src/db/migrate.js",
+        "nixpacks": {
+          "installCommand": "cd backend && npm install"
+        }
+      },
+      "startCommand": "cd backend && npm start",
+      "healthcheckPath": "/health"
+    }
+  ]
+}
