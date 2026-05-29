@@ -12,6 +12,7 @@
             required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
           />
+          <p class="text-xs text-gray-500 mt-1">3-30个字符，只能包含字母、数字和下划线</p>
         </div>
 
         <div>
@@ -32,7 +33,13 @@
             required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
           />
-          <p class="text-xs text-gray-500 mt-1">至少6个字符</p>
+          <div class="text-xs text-gray-500 mt-1 space-y-1">
+            <p>• 至少8个字符</p>
+            <p>• 包含至少一个大写字母</p>
+            <p>• 包含至少一个小写字母</p>
+            <p>• 包含至少一个数字</p>
+            <p>• 包含至少一个特殊字符 (!@#$%^&amp;*(),.?":{}|&lt;&gt;)</p>
+          </div>
         </div>
 
         <button
