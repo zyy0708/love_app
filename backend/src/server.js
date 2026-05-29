@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import userRoutes from './routes/userRoutes.js';
 import diaryRoutes from './routes/diaryRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/auth.js';
-import { initDB } from './config/db.js';
+import { initDB, exec } from './config/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -103,11 +103,97 @@ app.get('*', (req, res) => {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+const schema = `
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  avatar_url TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS couples (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user1_id INTEGER NOT NULL,
+  user2_id INTEGER NOT NULL,
+  bind_code TEXT UNIQUE,
+  bind_code_expires_at DATETIME,
+  is_bound INTEGER DEFAULT 0,
+  bound_at DATETIME,
+  anniversary DATE,
+  anniversary_name TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(user1_id, user2_id)
+);
+
+CREATE TABLE IF NOT EXISTS diary_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL,
+  author_id INTEGER NOT NULL,
+  title TEXT,
+  content TEXT NOT NULL,
+  mood TEXT,
+  images TEXT DEFAULT '[]',
+  ai_summary TEXT,
+  is_public INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (couple_id) REFERENCES couples(id) ON DELETE CASCADE,
+  FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS timeline_feed (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL,
+  entry_id INTEGER,
+  entry_type TEXT,
+  title TEXT,
+  preview TEXT,
+  actor_id INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (couple_id) REFERENCES couples(id) ON DELETE CASCADE,
+  FOREIGN KEY (entry_id) REFERENCES diary_entries(id) ON DELETE CASCADE,
+  FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai_summaries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  couple_id INTEGER NOT NULL,
+  summary_type TEXT,
+  period TEXT,
+  content TEXT,
+  entry_ids TEXT DEFAULT '[]',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (couple_id) REFERENCES couples(id) ON DELETE CASCADE,
+  UNIQUE(couple_id, summary_type, period)
+);
+`;
+
+const indexes = `
+CREATE INDEX IF NOT EXISTS idx_couples_user1 ON couples(user1_id);
+CREATE INDEX IF NOT EXISTS idx_couples_user2 ON couples(user2_id);
+CREATE INDEX IF NOT EXISTS idx_diary_couple ON diary_entries(couple_id);
+CREATE INDEX IF NOT EXISTS idx_diary_author ON diary_entries(author_id);
+CREATE INDEX IF NOT EXISTS idx_diary_created ON diary_entries(created_at);
+CREATE INDEX IF NOT EXISTS idx_timeline_couple ON timeline_feed(couple_id);
+CREATE INDEX IF NOT EXISTS idx_timeline_created ON timeline_feed(created_at);
+`;
+
 async function startServer() {
   try {
     console.log('Initializing database...');
     await initDB();
     console.log('✓ Database initialized');
+    
+    console.log('Creating database tables...');
+    exec(schema);
+    exec(indexes);
+    console.log('✓ Database tables created');
     
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`✓ Server running on http://0.0.0.0:${PORT}`);
