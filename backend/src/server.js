@@ -67,7 +67,7 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? process.env.ALLOWED_ORIGINS?.split(',') 
+    ? true
     : ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true
 }));
