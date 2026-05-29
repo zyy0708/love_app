@@ -36,6 +36,10 @@ export async function getUserById(userId) {
   return get('SELECT id, username, email, avatar_url, created_at FROM users WHERE id = ?', [userId]);
 }
 
+export async function getUserByEmail(email) {
+  return get('SELECT id, username, email, avatar_url, created_at FROM users WHERE email = ?', [email]);
+}
+
 export async function createCouple(user1Id, user2Id) {
   const bindCode = generateBindCode();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();

@@ -1,6 +1,5 @@
 import * as userModel from '../models/user.js';
 import { validatePasswordStrength, sanitizeInput, validateEmail } from '../utils/auth.js';
-import { get } from '../config/db.js';
 
 function asyncHandler(fn) {
   return (req, res, next) => {
@@ -22,8 +21,8 @@ export const register = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Invalid email format' });
   }
 
-  if (username.length < 3 || username.length > 30) {
-    return res.status(400).json({ error: 'Username must be between 3 and 30 characters' });
+  if (username.length < 2 || username.length > 30) {
+    return res.status(400).json({ error: 'Username must be between 2 and 30 characters' });
   }
 
   const passwordValidation = validatePasswordStrength(password);
@@ -41,6 +40,7 @@ export const register = asyncHandler(async (req, res) => {
     if (error.message.includes('UNIQUE constraint failed')) {
       return res.status(409).json({ error: 'Username or email already exists' });
     }
+    console.error('Registration error:', error);
     throw error;
   }
 });
@@ -74,7 +74,7 @@ export const initializeCouple = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Invalid email format' });
   }
 
-  const user2 = get('SELECT id FROM users WHERE email = ?', [user2EmailSanitized]);
+  const user2 = await userModel.getUserByEmail(user2EmailSanitized);
   
   if (!user2) {
     return res.status(404).json({ error: 'User not found' });
