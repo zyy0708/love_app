@@ -1,5 +1,6 @@
 import express from 'express';
 import * as userController from '../controllers/userController.js';
+import * as adminController from '../controllers/adminController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { validate, registerSchema, loginSchema, bindCoupleSchema, initializeCoupleSchema } from '../utils/validation.js';
 
@@ -12,5 +13,7 @@ router.get('/profile', authenticateToken, userController.getProfile);
 router.post('/couple/initialize', authenticateToken, validate(initializeCoupleSchema), userController.initializeCouple);
 router.post('/couple/bind', authenticateToken, validate(bindCoupleSchema), userController.bindCouple);
 router.get('/couple', authenticateToken, userController.getCouple);
+
+router.get('/admin/db-info', adminController.getDbInfo);
 
 export default router;
