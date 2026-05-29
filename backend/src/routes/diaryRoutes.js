@@ -12,7 +12,7 @@ router.get('/', diaryController.getEntries);
 router.get('/timeline', diaryController.getTimeline);
 router.get('/ai-summary', diaryController.getAISummary);
 router.get('/:entryId', diaryController.getEntry);
-router.put('/:entryId', diaryController.updateEntry);
+router.put('/:entryId', validate(diaryEntrySchema), diaryController.updateEntry);
 router.delete('/:entryId', diaryController.deleteEntry);
 
 export default router;

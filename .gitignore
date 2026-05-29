@@ -12,6 +12,9 @@ node_modules/
 *.sqlite3
 data/
 
+# Uploads
+backend/uploads/
+
 # Build outputs
 dist/
 build/

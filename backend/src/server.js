@@ -22,28 +22,44 @@ const PORT = process.env.PORT || 3000;
 
 const rateLimit = (options = {}) => {
   const { windowMs = 15 * 60 * 1000, max = 100, message = 'Too many requests' } = options;
-  
+
   const requests = new Map();
-  
+
+  // 定期清理过期条目，防止内存泄漏
+  const cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [key, times] of requests) {
+      const valid = times.filter(time => time > now - windowMs);
+      if (valid.length === 0) {
+        requests.delete(key);
+      } else {
+        requests.set(key, valid);
+      }
+    }
+  }, windowMs);
+
+  // 允许进程正常退出
+  cleanupInterval.unref();
+
   return (req, res, next) => {
     const key = req.ip;
     const now = Date.now();
     const windowStart = now - windowMs;
-    
+
     if (!requests.has(key)) {
       requests.set(key, []);
     }
-    
+
     const requestTimes = requests.get(key).filter(time => time > windowStart);
     requests.set(key, requestTimes);
-    
+
     if (requestTimes.length >= max) {
-      return res.status(429).json({ 
+      return res.status(429).json({
         error: message,
         retryAfter: Math.ceil(windowMs / 1000)
       });
     }
-    
+
     requestTimes.push(now);
     next();
   };
@@ -52,10 +68,29 @@ const rateLimit = (options = {}) => {
 const generalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many authentication attempts' });
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:5173'];
+
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    // 允许没有 origin 的请求（如 Postman、curl）
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
+
+// CORS 错误处理
+app.use((err, req, res, next) => {
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ error: 'CORS not allowed' });
+  }
+  next(err);
+});
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -81,12 +116,14 @@ app.use('/uploads', express.static('uploads'));
 const publicPath = path.join(__dirname, '..', 'public');
 app.use(express.static(publicPath));
 
+// API 404 和错误处理 — 放在 catch-all 之前
+app.use('/api', notFoundHandler);
+app.use('/api', errorHandler);
+
+// 非 API 路径的 catch-all — 仅用于前端 SPA 路由
 app.get('*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
-
-app.use(notFoundHandler);
-app.use(errorHandler);
 
 const schema = `
 CREATE TABLE IF NOT EXISTS users (

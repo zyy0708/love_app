@@ -75,12 +75,24 @@ export const initializeCouple = asyncHandler(async (req, res) => {
   }
 
   const user2 = await userModel.getUserByEmail(user2EmailSanitized);
-  
+
   if (!user2) {
     return res.status(404).json({ error: 'User not found' });
   }
 
+  // 防止自绑定
+  if (user1Id === user2.id) {
+    return res.status(400).json({ error: '不能与自己配对' });
+  }
+
   const user2Id = user2.id;
+
+  // 检查是否已存在情侣关系
+  const existingCouple = await userModel.getCoupleByEitherUserId(user1Id, user2Id);
+  if (existingCouple) {
+    return res.status(409).json({ error: '已经存在配对关系' });
+  }
+
   const couple = await userModel.createCouple(user1Id, user2Id);
 
   res.json({

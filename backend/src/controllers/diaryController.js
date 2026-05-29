@@ -1,6 +1,6 @@
 import * as diaryModel from '../models/diary.js';
 import * as aiModel from '../models/ai.js';
-import { requireCouple } from '../middleware/couple.js';
+import { getCoupleIdByUserId } from '../middleware/couple.js';
 import { get } from '../config/db.js';
 
 function asyncHandler(fn) {
@@ -9,13 +9,22 @@ function asyncHandler(fn) {
   };
 }
 
+async function resolveCoupleId(req, res) {
+  const userId = req.user.userId;
+  const coupleId = await getCoupleIdByUserId(userId);
+  if (!coupleId) {
+    res.status(403).json({ error: 'No bound couple found' });
+    return null;
+  }
+  return coupleId;
+}
+
 export const createEntry = asyncHandler(async (req, res) => {
-  await requireCouple(req, res, () => {});
-  if (res.headersSent) return;
+  const coupleId = await resolveCoupleId(req, res);
+  if (!coupleId) return;
 
   const { title, content, mood, images } = req.body;
   const userId = req.user.userId;
-  const coupleId = req.coupleId;
 
   if (!content) {
     return res.status(400).json({ error: 'Content is required' });
@@ -26,23 +35,21 @@ export const createEntry = asyncHandler(async (req, res) => {
 });
 
 export const getEntries = asyncHandler(async (req, res) => {
-  await requireCouple(req, res, () => {});
-  if (res.headersSent) return;
+  const coupleId = await resolveCoupleId(req, res);
+  if (!coupleId) return;
 
   const limit = Math.min(parseInt(req.query.limit) || 20, 100);
   const offset = parseInt(req.query.offset) || 0;
-  const coupleId = req.coupleId;
 
   const entries = await diaryModel.getDiaryEntries(coupleId, limit, offset);
   res.json(entries);
 });
 
 export const getEntry = asyncHandler(async (req, res) => {
-  await requireCouple(req, res, () => {});
-  if (res.headersSent) return;
+  const coupleId = await resolveCoupleId(req, res);
+  if (!coupleId) return;
 
   const { entryId } = req.params;
-  const coupleId = req.coupleId;
 
   const entry = await diaryModel.getDiaryEntryById(entryId, coupleId);
 
@@ -54,13 +61,12 @@ export const getEntry = asyncHandler(async (req, res) => {
 });
 
 export const updateEntry = asyncHandler(async (req, res) => {
-  await requireCouple(req, res, () => {});
-  if (res.headersSent) return;
+  const coupleId = await resolveCoupleId(req, res);
+  if (!coupleId) return;
 
   const { entryId } = req.params;
   const { title, content, mood, images } = req.body;
   const userId = req.user.userId;
-  const coupleId = req.coupleId;
 
   const entryCheck = get(
     'SELECT author_id FROM diary_entries WHERE id = ? AND couple_id = ?',
@@ -80,12 +86,11 @@ export const updateEntry = asyncHandler(async (req, res) => {
 });
 
 export const deleteEntry = asyncHandler(async (req, res) => {
-  await requireCouple(req, res, () => {});
-  if (res.headersSent) return;
+  const coupleId = await resolveCoupleId(req, res);
+  if (!coupleId) return;
 
   const { entryId } = req.params;
   const userId = req.user.userId;
-  const coupleId = req.coupleId;
 
   const entryCheck = get(
     'SELECT author_id FROM diary_entries WHERE id = ? AND couple_id = ?',
@@ -105,23 +110,21 @@ export const deleteEntry = asyncHandler(async (req, res) => {
 });
 
 export const getTimeline = asyncHandler(async (req, res) => {
-  await requireCouple(req, res, () => {});
-  if (res.headersSent) return;
+  const coupleId = await resolveCoupleId(req, res);
+  if (!coupleId) return;
 
   const limit = Math.min(parseInt(req.query.limit) || 30, 100);
   const offset = parseInt(req.query.offset) || 0;
-  const coupleId = req.coupleId;
 
   const feed = await diaryModel.getTimelineFeed(coupleId, limit, offset);
   res.json(feed);
 });
 
 export const getAISummary = asyncHandler(async (req, res) => {
-  await requireCouple(req, res, () => {});
-  if (res.headersSent) return;
+  const coupleId = await resolveCoupleId(req, res);
+  if (!coupleId) return;
 
   const { period = 'week' } = req.query;
-  const coupleId = req.coupleId;
 
   let summary = await aiModel.getAISummary(coupleId, 'general', period);
 
@@ -131,10 +134,10 @@ export const getAISummary = asyncHandler(async (req, res) => {
     if (period === 'year') daysBack = 365;
 
     const entries = get(`
-      SELECT * FROM diary_entries 
-      WHERE couple_id = ? AND datetime(created_at) > datetime('now', '-${daysBack} days')
+      SELECT * FROM diary_entries
+      WHERE couple_id = ? AND datetime(created_at) > datetime('now', '-' || ? || ' days')
       ORDER BY created_at DESC
-    `, [coupleId]);
+    `, [coupleId, daysBack]);
 
     const content = await aiModel.generateAISummary(entries ? [entries] : []);
     const entryIds = entries ? [entries.id] : [];

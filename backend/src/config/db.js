@@ -22,6 +22,9 @@ function escapeValue(value) {
     return 'NULL';
   }
   if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      return 'NULL';
+    }
     return value.toString();
   }
   const escaped = value.replace(/'/g, "''");

@@ -26,11 +26,16 @@ export function authenticateToken(req, res, next) {
 
 export function errorHandler(err, req, res, next) {
   console.error('Error:', err.message);
-  
+
+  // CORS 错误返回 403
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ error: 'CORS not allowed' });
+  }
+
   if (isProduction()) {
     res.status(500).json({ error: 'Internal server error' });
   } else {
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: err.message,
       stack: err.stack
@@ -40,17 +45,4 @@ export function errorHandler(err, req, res, next) {
 
 export function notFoundHandler(req, res) {
   res.status(404).json({ error: 'Resource not found' });
-}
-
-export function validateRequest(schema) {
-  return (req, res, next) => {
-    const { error } = schema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ 
-        error: 'Validation failed',
-        details: error.details.map(d => d.message)
-      });
-    }
-    next();
-  };
 }

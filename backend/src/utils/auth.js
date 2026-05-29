@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { getEnv, isProduction } from '../config/env.js';
 
 export function hashPassword(password) {
@@ -12,27 +13,27 @@ export function comparePassword(password, hash) {
 }
 
 export function generateToken(userId) {
-  const secret = getEnv('JWT_SECRET', 'dev-secret-key-change-in-production-1234567890123456');
+  const secret = getEnv('JWT_SECRET');
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is required');
   }
-  
+
   return jwt.sign({ userId }, secret, {
     expiresIn: '30d',
   });
 }
 
 export function verifyToken(token) {
-  const secret = getEnv('JWT_SECRET', 'dev-secret-key-change-in-production-1234567890123456');
+  const secret = getEnv('JWT_SECRET');
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is required');
   }
-  
+
   return jwt.verify(token, secret);
 }
 
 export function generateBindCode() {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
+  return crypto.randomBytes(4).toString('hex').toUpperCase().substring(0, 8);
 }
 
 export function validatePasswordStrength(password) {

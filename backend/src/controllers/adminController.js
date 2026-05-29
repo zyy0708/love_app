@@ -2,9 +2,9 @@ import { get, all, exec } from '../config/db.js';
 
 export const getDbInfo = async (req, res) => {
   try {
-    const users = all('SELECT * FROM users');
+    const users = all('SELECT id, username, email, avatar_url, created_at FROM users');
     const couples = all('SELECT * FROM couples');
-    const entries = all('SELECT * FROM diary_entries');
+    const entries = all('SELECT id, couple_id, author_id, title, mood, created_at FROM diary_entries');
 
     res.json({
       users,
@@ -28,7 +28,7 @@ export const clearDatabase = async (req, res) => {
     exec('DELETE FROM couples');
     exec('DELETE FROM users');
 
-    res.json({ 
+    res.json({
       message: 'Database cleared successfully!',
       timestamp: new Date().toISOString()
     });

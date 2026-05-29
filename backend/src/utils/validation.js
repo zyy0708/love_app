@@ -62,7 +62,7 @@ export const bindCoupleSchema = {
     bindCode: {
       type: 'string',
       min: 6,
-      max: 6
+      max: 8
     }
   },
   required: ['bindCode']
@@ -138,8 +138,8 @@ export function validate(schema) {
       }
       
       if (body.bindCode !== undefined) {
-        if (typeof body.bindCode !== 'string' || body.bindCode.length !== 6) {
-          errors.push('bindCode must be 6 characters');
+        if (typeof body.bindCode !== 'string' || body.bindCode.length < 6 || body.bindCode.length > 8) {
+          errors.push('bindCode must be 6-8 characters');
         }
       }
     }

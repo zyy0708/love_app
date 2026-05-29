@@ -104,9 +104,6 @@ const handleRegister = async () => {
     loading.value = true
     error.value = ''
     await authStore.register(form.username, form.email, form.password)
-    await authStore.login(form.email, form.password)
-    await authStore.loadProfile()
-    router.push('/couple-binding')
   } catch (err) {
     const errDetails = err.response?.data?.details
     if (errDetails && Array.isArray(errDetails)) {
@@ -114,6 +111,21 @@ const handleRegister = async () => {
     } else {
       error.value = err.response?.data?.error || '注册失败'
     }
+    return
+  } finally {
+    loading.value = false
+  }
+
+  // 注册成功，尝试登录
+  try {
+    loading.value = true
+    await authStore.login(form.email, form.password)
+    await authStore.loadProfile()
+    router.push('/couple-binding')
+  } catch (err) {
+    // 注册成功但登录失败，跳转到登录页让用户手动登录
+    error.value = '注册成功，请登录'
+    router.push('/login')
   } finally {
     loading.value = false
   }

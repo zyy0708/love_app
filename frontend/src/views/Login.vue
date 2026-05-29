@@ -69,7 +69,11 @@ const handleLogin = async () => {
     await authStore.login(form.email, form.password)
     await authStore.loadProfile()
     await authStore.loadCouple()
-    router.push('/dashboard')
+    if (authStore.couple) {
+      router.push('/dashboard')
+    } else {
+      router.push('/couple-binding')
+    }
   } catch (err) {
     error.value = err.response?.data?.error || '登录失败'
   } finally {

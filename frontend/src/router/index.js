@@ -48,6 +48,10 @@ const routes = [
     component: Timeline,
     meta: { requiresAuth: true, requiresCouple: true },
   },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
+  },
 ]
 
 const router = createRouter({

@@ -2,10 +2,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const requiredEnvVars = [];
+const requiredEnvVars = [
+  'JWT_SECRET'
+];
 
 const optionalEnvVars = [
-  'JWT_SECRET',
   'PORT',
   'NODE_ENV'
 ];
@@ -20,18 +21,21 @@ export function validateConfig() {
     process.exit(1);
   }
 
-  if (process.env.NODE_ENV === 'production') {
-    if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
-      console.error('❌ JWT_SECRET must be at least 32 characters in production');
-      process.exit(1);
-    }
+  if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 16) {
+    console.error('❌ JWT_SECRET must be at least 16 characters');
+    process.exit(1);
+  }
+
+  if (isProduction() && process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+    console.error('❌ JWT_SECRET must be at least 32 characters in production');
+    process.exit(1);
   }
 
   console.log('✓ Environment configuration validated');
 }
 
 export function getEnv(key, defaultValue = null) {
-  return process.env[key] || defaultValue;
+  return process.env[key] ?? defaultValue;
 }
 
 export function isProduction() {

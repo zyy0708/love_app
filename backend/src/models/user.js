@@ -88,7 +88,7 @@ export async function getCoupleById(coupleId) {
 
 export async function getCoupleByUserId(userId) {
   return get(`
-    SELECT c.*, 
+    SELECT c.*,
       u1.username as user1_username, u1.avatar_url as user1_avatar,
       u2.username as user2_username, u2.avatar_url as user2_avatar
      FROM couples c
@@ -96,4 +96,11 @@ export async function getCoupleByUserId(userId) {
      LEFT JOIN users u2 ON c.user2_id = u2.id
      WHERE (c.user1_id = ? OR c.user2_id = ?) AND c.is_bound = 1
   `, [userId, userId]);
+}
+
+export async function getCoupleByEitherUserId(userId1, userId2) {
+  return get(`
+    SELECT id FROM couples
+    WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)
+  `, [userId1, userId2, userId2, userId1]);
 }

@@ -14,7 +14,7 @@ router.post('/couple/initialize', authenticateToken, validate(initializeCoupleSc
 router.post('/couple/bind', authenticateToken, validate(bindCoupleSchema), userController.bindCouple);
 router.get('/couple', authenticateToken, userController.getCouple);
 
-router.get('/admin/db-info', adminController.getDbInfo);
-router.post('/admin/clear-db', adminController.clearDatabase);
+router.get('/admin/db-info', authenticateToken, adminController.getDbInfo);
+router.post('/admin/clear-db', authenticateToken, adminController.clearDatabase);
 
 export default router;

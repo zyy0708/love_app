@@ -4,7 +4,7 @@
       <nav class="mb-8 flex justify-between items-center">
         <router-link to="/dashboard" class="text-3xl font-bold text-pink-600">💕 情侣日记</router-link>
         <button
-          @click="authStore.logout"
+          @click="handleLogout"
           class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
         >
           登出
@@ -69,11 +69,12 @@
               />
               <button
                 type="button"
-                @click="$refs.fileInput?.click()"
+                @click="fileInput?.click()"
                 class="text-gray-600 hover:text-gray-800"
               >
                 📷 点击选择照片
               </button>
+              <p class="text-xs text-gray-500 mt-2">每张照片最大 5MB，最多 9 张</p>
               <div v-if="form.images?.length > 0" class="mt-4 flex gap-2 flex-wrap">
                 <div v-for="(img, idx) in form.images" :key="idx" class="relative">
                   <img :src="img" alt="preview" class="h-24 w-24 object-cover rounded" />
@@ -130,6 +131,9 @@ const loading = ref(false)
 const error = ref('')
 const isEditing = ref(false)
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_IMAGES = 9
+
 const moods = {
   happy: '😊',
   sad: '😢',
@@ -146,15 +150,36 @@ const form = reactive({
   images: [],
 })
 
+const handleLogout = () => {
+  authStore.logout()
+  window.location.href = '/login'
+}
+
 const handleImageUpload = (e) => {
   const files = e.target.files
   for (let file of files) {
+    // 检查数量限制
+    if (form.images.length >= MAX_IMAGES) {
+      error.value = `最多只能上传 ${MAX_IMAGES} 张照片`
+      break
+    }
+    // 检查文件大小
+    if (file.size > MAX_FILE_SIZE) {
+      error.value = `照片 "${file.name}" 超过 5MB 限制`
+      continue
+    }
+    // 检查文件类型
+    if (!file.type.startsWith('image/')) {
+      continue
+    }
     const reader = new FileReader()
     reader.onload = (event) => {
       form.images.push(event.target.result)
     }
     reader.readAsDataURL(file)
   }
+  // 重置 input 以允许重新选择同一文件
+  e.target.value = ''
 }
 
 const saveDiary = async () => {

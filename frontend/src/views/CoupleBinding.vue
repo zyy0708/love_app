@@ -4,7 +4,7 @@
       <nav class="mb-8 flex justify-between items-center">
         <h1 class="text-3xl font-bold text-pink-600">💕 情侣日记</h1>
         <button
-          @click="authStore.logout"
+          @click="handleLogout"
           class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
         >
           登出
@@ -19,7 +19,7 @@
           <div class="p-4 bg-green-50 rounded-lg border-2 border-green-300">
             <p class="text-green-700 font-semibold">✓ 已与伴侣配对</p>
             <p class="text-sm text-gray-600 mt-2">
-              {{ authStore.couple?.user1_username || authStore.couple?.user2_username }}
+              伴侣：{{ partnerName }}
             </p>
           </div>
 
@@ -82,14 +82,14 @@
                   <input
                     v-model="inputBindCode"
                     type="text"
-                    placeholder="输入6位配对码"
-                    maxlength="6"
+                    placeholder="输入配对码"
+                    maxlength="8"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 uppercase"
                   />
                 </div>
                 <button
                   @click="doBindCouple"
-                  :disabled="!inputBindCode || inputBindCode.length !== 6 || loading"
+                  :disabled="!inputBindCode || inputBindCode.length < 6 || loading"
                   class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
                 >
                   {{ loading ? '配对中...' : '确认配对' }}
@@ -118,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { userService } from '../services'
@@ -131,6 +131,21 @@ const bindCode = ref('')
 const coupled = ref(false)
 const loading = ref(false)
 const error = ref('')
+
+// 根据当前用户 ID 判断显示伴侣名字
+const partnerName = computed(() => {
+  if (!authStore.couple || !authStore.user) return ''
+  const couple = authStore.couple
+  if (couple.user1_id === authStore.user.id) {
+    return couple.user2_username || '未知'
+  }
+  return couple.user1_username || '未知'
+})
+
+const handleLogout = () => {
+  authStore.logout()
+  window.location.href = '/login'
+}
 
 onMounted(async () => {
   await checkCoupleStatus()
