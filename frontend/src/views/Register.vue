@@ -12,7 +12,7 @@
             required
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
           />
-          <p class="text-xs text-gray-500 mt-1">3-30个字符，只能包含字母、数字和下划线</p>
+          <p class="text-xs text-gray-500 mt-1">2-30个字符</p>
         </div>
 
         <div>
@@ -34,46 +34,14 @@
             @input="validatePassword"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
           />
-          <div class="mt-2 space-y-1">
+          <div class="mt-2">
             <p class="text-xs text-gray-600 mb-2 font-medium">密码要求：</p>
             <div class="flex items-center space-x-2">
               <span class="text-lg" :class="passwordChecks.minLength ? 'text-green-500' : 'text-gray-400'">
                 {{ passwordChecks.minLength ? '✓' : '○' }}
               </span>
               <span class="text-xs" :class="passwordChecks.minLength ? 'text-green-600' : 'text-gray-500'">
-                至少8个字符
-              </span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <span class="text-lg" :class="passwordChecks.hasUpperCase ? 'text-green-500' : 'text-gray-400'">
-                {{ passwordChecks.hasUpperCase ? '✓' : '○' }}
-              </span>
-              <span class="text-xs" :class="passwordChecks.hasUpperCase ? 'text-green-600' : 'text-gray-500'">
-                包含至少一个大写字母 (A-Z)
-              </span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <span class="text-lg" :class="passwordChecks.hasLowerCase ? 'text-green-500' : 'text-gray-400'">
-                {{ passwordChecks.hasLowerCase ? '✓' : '○' }}
-              </span>
-              <span class="text-xs" :class="passwordChecks.hasLowerCase ? 'text-green-600' : 'text-gray-500'">
-                包含至少一个小写字母 (a-z)
-              </span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <span class="text-lg" :class="passwordChecks.hasNumber ? 'text-green-500' : 'text-gray-400'">
-                {{ passwordChecks.hasNumber ? '✓' : '○' }}
-              </span>
-              <span class="text-xs" :class="passwordChecks.hasNumber ? 'text-green-600' : 'text-gray-500'">
-                包含至少一个数字 (0-9)
-              </span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <span class="text-lg" :class="passwordChecks.hasSpecial ? 'text-green-500' : 'text-gray-400'">
-                {{ passwordChecks.hasSpecial ? '✓' : '○' }}
-              </span>
-              <span class="text-xs" :class="passwordChecks.hasSpecial ? 'text-green-600' : 'text-gray-500'">
-                包含至少一个特殊字符 (!@#$%^&*(),.?":{}|<>)
+                至少6个字符
               </span>
             </div>
           </div>
@@ -120,23 +88,15 @@ const form = reactive({
 
 const passwordChecks = reactive({
   minLength: false,
-  hasUpperCase: false,
-  hasLowerCase: false,
-  hasNumber: false,
-  hasSpecial: false,
 })
 
 const isPasswordValid = computed(() => {
-  return Object.values(passwordChecks).every(check => check === true)
+  return passwordChecks.minLength
 })
 
 function validatePassword() {
   const password = form.password
-  passwordChecks.minLength = password.length >= 8
-  passwordChecks.hasUpperCase = /[A-Z]/.test(password)
-  passwordChecks.hasLowerCase = /[a-z]/.test(password)
-  passwordChecks.hasNumber = /[0-9]/.test(password)
-  passwordChecks.hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+  passwordChecks.minLength = password.length >= 6
 }
 
 const handleRegister = async () => {

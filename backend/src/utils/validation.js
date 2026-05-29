@@ -2,9 +2,8 @@ export const registerSchema = {
   body: {
     username: {
       type: 'string',
-      min: 3,
-      max: 30,
-      pattern: /^[a-zA-Z0-9_]+$/
+      min: 2,
+      max: 30
     },
     email: {
       type: 'string',
@@ -12,7 +11,7 @@ export const registerSchema = {
     },
     password: {
       type: 'string',
-      min: 8
+      min: 6
     }
   },
   required: ['username', 'email', 'password']
@@ -98,11 +97,8 @@ export function validate(schema) {
         if (typeof body.username !== 'string') {
           errors.push('username must be a string');
         } else {
-          if (body.username.length < 3 || body.username.length > 30) {
-            errors.push('username must be between 3 and 30 characters');
-          }
-          if (!/^[a-zA-Z0-9_]+$/.test(body.username)) {
-            errors.push('username can only contain letters, numbers, and underscores');
+          if (body.username.length < 2 || body.username.length > 30) {
+            errors.push('username must be between 2 and 30 characters');
           }
         }
       }
@@ -121,8 +117,8 @@ export function validate(schema) {
       if (body.password !== undefined) {
         if (typeof body.password !== 'string') {
           errors.push('password must be a string');
-        } else if (body.password.length < 8) {
-          errors.push('password must be at least 8 characters');
+        } else if (body.password.length < 6) {
+          errors.push('password must be at least 6 characters');
         }
       }
       
