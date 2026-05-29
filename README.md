@@ -17,42 +17,45 @@
 
 ### 前端
 - Vue 3（组合式API）
-- Vite
-- Tailwind CSS
-- Pinia（状态管理）
-- Vue Router（路由）
+- Vite 4
+- Tailwind CSS 3
+- Pinia 2（状态管理）
+- Vue Router 4（路由）
+- Axios（HTTP 请求）
+- date-fns（日期格式化）
 
 ### 后端
-- Node.js + Express
-- PostgreSQL
-- JWT认证
+- Node.js + Express 4
+- sql.js（SQLite WebAssembly）
+- JWT 认证（jsonwebtoken）
+- bcryptjs（密码加密）
 - Multer（文件上传）
+- Joi 风格参数校验
 
 ## 📦 项目结构
 
 ```
-情侣app/
+love_app/
 ├── backend/              # 后端应用
 │   ├── src/
-│   │   ├── config/      # 配置文件
+│   │   ├── config/      # 配置文件（db.js, env.js）
 │   │   ├── controllers/ # 业务逻辑
 │   │   ├── models/      # 数据模型
 │   │   ├── routes/      # API路由
-│   │   ├── middleware/  # 中间件
+│   │   ├── middleware/  # 中间件（auth, couple）
 │   │   ├── utils/       # 工具函数
 │   │   ├── db/          # 数据库迁移
 │   │   └── server.js    # 主服务器文件
+│   ├── data/            # SQLite 数据库文件
 │   ├── uploads/         # 上传文件夹
 │   ├── package.json
 │   └── .env.example
 │
 ├── frontend/            # 前端应用
 │   ├── src/
-│   │   ├── components/  # Vue组件
 │   │   ├── views/       # 页面视图
 │   │   ├── stores/      # Pinia状态管理
 │   │   ├── services/    # API服务
-│   │   ├── utils/       # 工具函数
 │   │   ├── router/      # 路由配置
 │   │   ├── App.vue      # 根组件
 │   │   ├── main.js      # 入口文件
@@ -69,8 +72,7 @@
 ## 🚀 快速开始
 
 ### 前置要求
-- Node.js >= 14
-- PostgreSQL >= 12
+- Node.js >= 16
 
 ### 1. 后端设置
 
@@ -83,16 +85,13 @@ npm install
 
 # 配置环境变量
 cp .env.example .env
-# 编辑 .env 文件，设置数据库连接信息
-
-# 运行数据库迁移
-npm run migrate
+# 编辑 .env 文件，设置 JWT_SECRET（至少16个字符）
 
 # 启动服务器
 npm run dev
 ```
 
-后端将运行在 `http://localhost:3000`
+后端将运行在 `http://localhost:3000`，数据库会在首次启动时自动创建。
 
 ### 2. 前端设置
 
@@ -107,58 +106,30 @@ npm install
 npm run dev
 ```
 
-前端将运行在 `http://localhost:5173`
+前端将运行在 `http://localhost:5173`，自动代理 `/api` 请求到后端。
 
-## 🗄️ 数据库设置
+## 🗄️ 数据库说明
 
-### PostgreSQL安装与初始化
+本项目使用 **SQLite**（通过 sql.js WebAssembly 引擎），无需安装任何数据库服务。数据库文件存储在 `backend/data/couple_diary.db`，首次启动时自动创建。
 
-**Windows:**
-```bash
-# 通过安装程序安装PostgreSQL
-# 或使用WSL/Docker
+### 数据库表结构
 
-# 连接数据库
-psql -U postgres
-
-# 创建数据库
-CREATE DATABASE couple_diary;
-
-# 退出
-\q
-```
-
-**Linux/Mac:**
-```bash
-# Ubuntu/Debian
-sudo apt-get install postgresql postgresql-contrib
-
-# macOS (使用Homebrew)
-brew install postgresql
-brew services start postgresql
-
-# 启动PostgreSQL服务
-sudo service postgresql start
-```
+| 表名 | 说明 |
+|------|------|
+| users | 用户信息 |
+| couples | 情侣关系 |
+| diary_entries | 日记条目 |
+| timeline_feed | 时间线事件 |
+| ai_summaries | AI 生成的总结 |
 
 ### 配置 .env 文件
 
 ```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=couple_diary
-DB_USER=postgres
-DB_PASSWORD=your_password
-JWT_SECRET=your_secret_key_here
 PORT=3000
 NODE_ENV=development
-```
-
-### 初始化数据库
-
-```bash
-cd backend
-npm run migrate
+DB_PATH=./data/couple_diary.db
+JWT_SECRET=your_secret_key_at_least_16_chars
+ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 ## 📖 API 文档
@@ -213,7 +184,7 @@ Authorization: Bearer {token}
 Response:
 {
   "message": "Couple created...",
-  "bindCode": "ABC123",
+  "bindCode": "A1B2C3D4",
   "expiresAt": "2024-05-30T10:00:00Z"
 }
 ```
@@ -223,7 +194,7 @@ Response:
 POST /api/users/couple/bind
 Authorization: Bearer {token}
 {
-  "bindCode": "ABC123"
+  "bindCode": "A1B2C3D4"
 }
 ```
 
@@ -291,6 +262,20 @@ Authorization: Bearer {token}
 period: 'week' | 'month' | 'year'
 ```
 
+### 管理接口（需要认证）
+
+#### 查看数据库信息
+```
+GET /api/users/admin/db-info
+Authorization: Bearer {token}
+```
+
+#### 清空数据库
+```
+POST /api/users/admin/clear-db
+Authorization: Bearer {token}
+```
+
 ## 🎨 页面说明
 
 | 页面 | 路由 | 功能 |
@@ -306,11 +291,15 @@ period: 'week' | 'month' | 'year'
 
 ## 🔐 安全特性
 
-- ✅ JWT Token认证
+- ✅ JWT Token 认证（30天有效期）
 - ✅ 密码哈希加密（bcryptjs）
 - ✅ 数据隐私隔离（情侣之间）
-- ✅ 过期令牌处理
-- ✅ CORS配置
+- ✅ 管理员接口认证保护
+- ✅ CORS 白名单配置
+- ✅ 请求速率限制（通用 100/15min，认证 10/15min）
+- ✅ 邀请码使用 crypto 安全生成
+- ✅ 防止自绑定和重复配对
+- ✅ 前端 401 拦截器自动处理过期 token
 
 ## 📱 使用流程
 
@@ -337,52 +326,33 @@ period: 'week' | 'month' | 'year'
 2. 在 `router/index.js` 中添加路由
 3. 使用 `useAuthStore` 和 `useDiaryStore` 管理状态
 
-## 📝 环境变量
-
-### 后端 (.env)
-```
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=couple_diary
-DB_USER=postgres
-DB_PASSWORD=password
-JWT_SECRET=your_super_secret_key
-PORT=3000
-NODE_ENV=development
-```
-
 ## 🐛 故障排除
-
-### 连接被拒绝错误
-- 检查PostgreSQL是否运行：`sudo service postgresql status`
-- 验证.env中的数据库凭证
 
 ### 401未授权错误
 - 检查token是否存储在localStorage
 - 验证token未过期（默认30天）
+- 前端会自动清除过期token并跳转登录页
 
 ### CORS错误
-- 确保前端运行在 http://localhost:5173
-- 检查backend/src/server.js中的CORS配置
+- 确保前端运行在 `ALLOWED_ORIGINS` 配置的来源
+- 检查 `backend/.env` 中的 `ALLOWED_ORIGINS` 配置
+
+### 数据库重置
+```bash
+# 删除数据库文件后重启后端即可重新创建
+rm backend/data/couple_diary.db
+```
 
 ## 📚 相关资源
 
 - [Vue 3 文档](https://v3.vuejs.org/)
 - [Express 文档](https://expressjs.com/)
-- [PostgreSQL 文档](https://www.postgresql.org/docs/)
+- [sql.js 文档](https://sql.js.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
 
 ## 📄 许可证
 
 MIT License
-
-## 👥 贡献
-
-欢迎提交Issue和Pull Request！
-
-## 💬 支持
-
-如有问题，请在项目中创建Issue。
 
 ---
 
