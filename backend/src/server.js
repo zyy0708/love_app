@@ -65,11 +65,6 @@ app.use(generalLimiter);
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
 
-app.use('/uploads', express.static('uploads'));
-
-const publicPath = path.join(__dirname, '..', 'public');
-app.use(express.static(publicPath));
-
 app.use('/api/users', userRoutes);
 app.use('/api/diary', diaryRoutes);
 
@@ -80,6 +75,11 @@ app.get('/api/health', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+app.use('/uploads', express.static('uploads'));
+
+const publicPath = path.join(__dirname, '..', 'public');
+app.use(express.static(publicPath));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
