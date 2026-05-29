@@ -16,10 +16,12 @@ const routes = [
   {
     path: '/login',
     component: Login,
+    meta: { guestOnly: true },
   },
   {
     path: '/register',
     component: Register,
+    meta: { guestOnly: true },
   },
   {
     path: '/couple-binding',
@@ -55,6 +57,32 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+
+  if (authStore.isLoggedIn && to.meta.guestOnly) {
+    if (!authStore.couple) {
+      await authStore.loadCouple()
+    }
+
+    if (authStore.couple) {
+      next('/dashboard')
+    } else {
+      next('/couple-binding')
+    }
+    return
+  }
+
+  if (to.path === '/' && authStore.isLoggedIn) {
+    if (!authStore.couple) {
+      await authStore.loadCouple()
+    }
+
+    if (authStore.couple) {
+      next('/dashboard')
+    } else {
+      next('/couple-binding')
+    }
+    return
+  }
 
   if (to.meta.requiresAuth) {
     if (!authStore.isLoggedIn) {
