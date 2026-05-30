@@ -59,9 +59,10 @@
                   <input
                     v-model="partnerEmail"
                     type="email"
-                    placeholder="输入伴侣的邮箱地址"
+                    placeholder="输入伴侣已注册的邮箱"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
                   />
+                  <p class="text-xs text-gray-500 mt-1">⚠️ 伴侣必须先注册账号</p>
                 </div>
                 <button
                   @click="initCouple"
