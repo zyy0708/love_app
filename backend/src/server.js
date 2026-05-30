@@ -72,24 +72,33 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost:5173', 'http://localhost:3000'];
 
-// CORS 配置 - 开发环境允许所有来源
+// CORS 配置
 const corsOptions = {
-  origin: true,
+  origin: (origin, callback) => {
+    // 允许没有 origin 的请求（同源请求、Postman、curl）
+    if (!origin) return callback(null, true);
+
+    // 允许白名单中的来源
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // 允许 render.com 的子域名（自动部署场景）
+    if (origin.endsWith('.onrender.com')) {
+      return callback(null, true);
+    }
+
+    // 开发环境允许所有来源
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
-
-// 生产环境使用白名单
-if (process.env.NODE_ENV === 'production') {
-  corsOptions.origin = (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  };
-}
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
