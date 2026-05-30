@@ -1,176 +1,218 @@
-import initSqlJs from 'sql.js';
 import dotenv from 'dotenv';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
 dotenv.config();
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = process.env.DB_PATH || './data/couple_diary.db';
-const dbDir = dirname(dbPath);
+// 根据环境选择数据库实现
+const usePostgres = !!process.env.DATABASE_URL;
 
-if (!existsSync(dbDir)) {
-  mkdirSync(dbDir, { recursive: true });
-}
+let db;
 
-let db = null;
-let SQL = null;
+if (usePostgres) {
+  // PostgreSQL 实现
+  const pg = await import('pg');
+  const { Pool } = pg.default;
 
-/**
- * 初始化数据库连接
- */
-async function initDB() {
-  SQL = await initSqlJs();
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? true : false
+  });
+
+  // 测试连接
+  try {
+    const client = await pool.connect();
+    console.log('✓ Connected to PostgreSQL');
+    client.release();
+  } catch (err) {
+    console.error('Failed to connect to PostgreSQL:', err.message);
+    process.exit(1);
+  }
+
+  // 转换 SQL 的 ? 占位符为 PostgreSQL 的 $1, $2, ...
+  function convertSql(sql) {
+    let paramIndex = 0;
+    return sql.replace(/\?/g, () => `$${++paramIndex}`);
+  }
+
+  db = {
+    async run(sql, params = []) {
+      const convertedSql = convertSql(sql);
+      // 添加 RETURNING id 以获取插入的 ID
+      let result;
+      if (sql.trim().toUpperCase().startsWith('INSERT')) {
+        const returningSql = convertedSql + ' RETURNING id';
+        result = await pool.query(returningSql, params);
+      } else {
+        result = await pool.query(convertedSql, params);
+      }
+      return {
+        lastInsertRowid: result.rows[0]?.id || 0,
+        changes: result.rowCount
+      };
+    },
+
+    async get(sql, params = []) {
+      const convertedSql = convertSql(sql);
+      const result = await pool.query(convertedSql, params);
+      return result.rows[0] || null;
+    },
+
+    async all(sql, params = []) {
+      const convertedSql = convertSql(sql);
+      const result = await pool.query(convertedSql, params);
+      return result.rows;
+    },
+
+    async exec(sql) {
+      await pool.query(sql);
+    },
+
+    async beginTransaction() {
+      await pool.query('BEGIN');
+    },
+
+    async commit() {
+      await pool.query('COMMIT');
+    },
+
+    async rollback() {
+      await pool.query('ROLLBACK');
+    },
+
+    async close() {
+      await pool.end();
+    }
+  };
+
+} else {
+  // SQLite 实现 (sql.js - 本地开发)
+  const initSqlJs = (await import('sql.js')).default;
+  const { existsSync, mkdirSync, readFileSync, writeFileSync } = await import('fs');
+  const { dirname } = await import('path');
+  const { fileURLToPath } = await import('url');
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const dbPath = process.env.DB_PATH || './data/couple_diary.db';
+  const dbDir = dirname(dbPath);
+
+  if (!existsSync(dbDir)) {
+    mkdirSync(dbDir, { recursive: true });
+  }
+
+  let sqlite;
+  const SQL = await initSqlJs();
 
   if (existsSync(dbPath)) {
     try {
       const buffer = readFileSync(dbPath);
-      db = new SQL.Database(buffer);
-      console.log('✓ Loaded existing database');
+      sqlite = new SQL.Database(buffer);
+      console.log('✓ Loaded existing SQLite database');
     } catch (error) {
-      console.warn('⚠️ Failed to load existing database, creating new one:', error);
-      db = new SQL.Database();
+      console.warn('⚠️ Failed to load database, creating new one');
+      sqlite = new SQL.Database();
     }
   } else {
-    db = new SQL.Database();
-    console.log('✓ Created new database');
+    sqlite = new SQL.Database();
+    console.log('✓ Created new SQLite database');
   }
 
-  db.run("PRAGMA foreign_keys = ON");
+  sqlite.run("PRAGMA foreign_keys = ON");
 
-  return db;
-}
-
-/**
- * 保存数据库到磁盘
- */
-function saveDB() {
-  if (db) {
-    try {
-      const data = db.export();
-      const buffer = Buffer.from(data);
-      writeFileSync(dbPath, buffer);
-    } catch (error) {
-      console.error('Failed to save database:', error);
+  function saveDB() {
+    if (sqlite) {
+      try {
+        const data = sqlite.export();
+        const buffer = Buffer.from(data);
+        writeFileSync(dbPath, buffer);
+      } catch (error) {
+        console.error('Failed to save database:', error);
+      }
     }
   }
-}
 
-/**
- * 执行 SQL 语句（INSERT, UPDATE, DELETE）
- * 使用原生参数化查询防止 SQL 注入
- * @param {string} sql - SQL 语句，使用 ? 作为参数占位符
- * @param {Array} params - 参数数组
- * @returns {Object} - 包含 lastInsertRowid 的结果对象
- */
-function run(sql, params = []) {
-  try {
-    // 使用 sql.js 原生参数化查询
-    db.run(sql, params);
-    saveDB();
-    const result = db.exec("SELECT last_insert_rowid() as id");
-    const lastId = result[0]?.values[0]?.[0] || 0;
-    return { lastInsertRowid: lastId };
-  } catch (error) {
-    console.error('SQL Error:', error.message);
-    // 不打印完整 SQL 和参数，避免敏感信息泄露
-    throw error;
-  }
-}
+  db = {
+    run(sql, params = []) {
+      sqlite.run(sql, params);
+      saveDB();
+      const result = sqlite.exec("SELECT last_insert_rowid() as id");
+      const lastId = result[0]?.values[0]?.[0] || 0;
+      return { lastInsertRowid: lastId };
+    },
 
-/**
- * 查询单行数据
- * 使用原生参数化查询防止 SQL 注入
- * @param {string} sql - SQL 语句，使用 ? 作为参数占位符
- * @param {Array} params - 参数数组
- * @returns {Object|null} - 查询结果行或 null
- */
-function get(sql, params = []) {
-  try {
-    // 使用 sql.js 原生参数化查询
-    const result = db.exec(sql, params);
-    if (result.length === 0 || result[0].values.length === 0) return null;
-
-    const columns = result[0].columns;
-    const values = result[0].values[0];
-
-    const row = {};
-    columns.forEach((col, i) => {
-      row[col] = values[i];
-    });
-    return row;
-  } catch (error) {
-    console.error('SQL Error:', error.message);
-    throw error;
-  }
-}
-
-/**
- * 查询多行数据
- * 使用原生参数化查询防止 SQL 注入
- * @param {string} sql - SQL 语句，使用 ? 作为参数占位符
- * @param {Array} params - 参数数组
- * @returns {Array} - 查询结果数组
- */
-function all(sql, params = []) {
-  try {
-    // 使用 sql.js 原生参数化查询
-    const result = db.exec(sql, params);
-    if (result.length === 0) return [];
-
-    const columns = result[0].columns;
-    const rows = result[0].values;
-
-    return rows.map(values => {
+    get(sql, params = []) {
+      const result = sqlite.exec(sql, params);
+      if (result.length === 0 || result[0].values.length === 0) return null;
+      const columns = result[0].columns;
+      const values = result[0].values[0];
       const row = {};
-      columns.forEach((col, i) => {
-        row[col] = values[i];
-      });
+      columns.forEach((col, i) => { row[col] = values[i]; });
       return row;
-    });
-  } catch (error) {
-    console.error('SQL Error:', error.message);
-    throw error;
-  }
+    },
+
+    all(sql, params = []) {
+      const result = sqlite.exec(sql, params);
+      if (result.length === 0) return [];
+      const columns = result[0].columns;
+      return result[0].values.map(values => {
+        const row = {};
+        columns.forEach((col, i) => { row[col] = values[i]; });
+        return row;
+      });
+    },
+
+    exec(sql) {
+      sqlite.exec(sql);
+      saveDB();
+    },
+
+    beginTransaction() {
+      sqlite.run('BEGIN TRANSACTION');
+    },
+
+    commit() {
+      sqlite.run('COMMIT');
+      saveDB();
+    },
+
+    rollback() {
+      sqlite.run('ROLLBACK');
+    },
+
+    close() {
+      saveDB();
+    }
+  };
 }
 
-/**
- * 执行原始 SQL（仅用于 DDL 和管理操作）
- * 警告：此函数不支持参数化查询，仅用于硬编码的 SQL 语句
- * @param {string} sql - SQL 语句
- */
-function exec(sql) {
-  try {
-    db.exec(sql);
-    saveDB();
-  } catch (error) {
-    console.error('SQL Error:', error.message);
-    throw error;
-  }
+// 导出统一接口
+export function run(sql, params = []) {
+  return db.run(sql, params);
 }
 
-/**
- * 开始事务
- */
-function beginTransaction() {
-  db.run('BEGIN TRANSACTION');
+export function get(sql, params = []) {
+  return db.get(sql, params);
 }
 
-/**
- * 提交事务
- */
-function commit() {
-  db.run('COMMIT');
-  saveDB();
+export function all(sql, params = []) {
+  return db.all(sql, params);
 }
 
-/**
- * 回滚事务
- */
-function rollback() {
-  db.run('ROLLBACK');
+export function exec(sql) {
+  return db.exec(sql);
 }
 
-export { initDB, run, get, all, exec, saveDB, beginTransaction, commit, rollback };
-export default { initDB, run, get, all, exec, saveDB, beginTransaction, commit, rollback };
+export function beginTransaction() {
+  return db.beginTransaction();
+}
+
+export function commit() {
+  return db.commit();
+}
+
+export function rollback() {
+  return db.rollback();
+}
+
+export function close() {
+  return db.close();
+}
+
+export default { run, get, all, exec, beginTransaction, commit, rollback, close };
