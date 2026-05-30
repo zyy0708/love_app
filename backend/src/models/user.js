@@ -102,5 +102,6 @@ export async function getCoupleByEitherUserId(userId1, userId2) {
   return get(`
     SELECT id FROM couples
     WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)
+    AND is_bound = 1
   `, [userId1, userId2, userId2, userId1]);
 }
