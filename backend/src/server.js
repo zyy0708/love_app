@@ -72,17 +72,20 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost:5173'];
 
-app.use(cors({
+// CORS 只应用于 API 路由
+const corsOptions = {
   origin: (origin, callback) => {
-    // 允许没有 origin 的请求（如 Postman、curl）
+    // 允许没有 origin 的请求（如 Postman、curl、同源请求）
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
   },
-  credentials: true
-}));
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
 
 // CORS 错误处理
 app.use((err, req, res, next) => {
@@ -100,6 +103,8 @@ app.use(generalLimiter);
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
 
+// API 路由使用 CORS
+app.use('/api', cors(corsOptions));
 app.use('/api/users', userRoutes);
 app.use('/api/diary', diaryRoutes);
 
@@ -204,6 +209,9 @@ CREATE INDEX IF NOT EXISTS idx_diary_author ON diary_entries(author_id);
 CREATE INDEX IF NOT EXISTS idx_diary_created ON diary_entries(created_at);
 CREATE INDEX IF NOT EXISTS idx_timeline_couple ON timeline_feed(couple_id);
 CREATE INDEX IF NOT EXISTS idx_timeline_created ON timeline_feed(created_at);
+CREATE INDEX IF NOT EXISTS idx_timeline_entry_id ON timeline_feed(entry_id);
+CREATE INDEX IF NOT EXISTS idx_diary_couple_created ON diary_entries(couple_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_couples_is_bound ON couples(is_bound);
 `;
 
 async function startServer() {
@@ -211,16 +219,44 @@ async function startServer() {
     console.log('Initializing database...');
     await initDB();
     console.log('✓ Database initialized');
-    
+
     console.log('Creating database tables if not exist...');
     exec(schema);
     exec(indexes);
+
+    // 添加 is_admin 字段（如果不存在）
+    try {
+      exec("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0");
+      console.log('✓ Added is_admin column to users table');
+    } catch (e) {
+      // 字段已存在，忽略错误
+    }
+
     console.log('✓ Database tables ready');
-    
-    app.listen(PORT, '0.0.0.0', () => {
+
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✓ Server running on http://0.0.0.0:${PORT}`);
       console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
     });
+
+    // 优雅关闭处理
+    const gracefulShutdown = (signal) => {
+      console.log(`\n${signal} received. Starting graceful shutdown...`);
+      server.close(() => {
+        console.log('✓ HTTP server closed');
+        process.exit(0);
+      });
+
+      // 强制关闭超时
+      setTimeout(() => {
+        console.error('Forced shutdown after timeout');
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

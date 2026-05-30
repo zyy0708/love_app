@@ -117,8 +117,14 @@ export function validate(schema) {
       if (body.password !== undefined) {
         if (typeof body.password !== 'string') {
           errors.push('password must be a string');
-        } else if (body.password.length < 6) {
-          errors.push('password must be at least 6 characters');
+        } else if (body.password.length < 8) {
+          errors.push('password must be at least 8 characters');
+        } else if (!/(?=.*[a-z])/.test(body.password)) {
+          errors.push('password must contain at least one lowercase letter');
+        } else if (!/(?=.*[A-Z])/.test(body.password)) {
+          errors.push('password must contain at least one uppercase letter');
+        } else if (!/(?=.*\d)/.test(body.password)) {
+          errors.push('password must contain at least one number');
         }
       }
       

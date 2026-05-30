@@ -1,359 +1,396 @@
-# 情侣记录系统（Couple Diary App）
+# 💕 情侣日记 (Couple Diary)
 
-## 📋 项目概述
+一个专为情侣设计的私密日记应用，记录你们一起的每一刻。
 
-一个完整的全栈情侣日记应用，用于记录两个人的故事、照片、心情和重要时刻。支持AI生成回忆总结、纪念日倒计时等功能。
+## ✨ 功能特性
 
-## ✨ 核心功能
+### 📝 日记系统
+- 创建、编辑、删除日记条目
+- 支持文字和图片
+- 6种心情标签：😊 开心、😢 难过、😠 生气、😐 平静、😍 热恋、🤩 兴奋
+- 按时间倒序展示
 
-- **👥 情侣配对**: 通过邀请码进行安全配对
-- **📝 日记系统**: 支持文本、图片、心情记录
-- **🎉 纪念日管理**: 倒计时重要日期
-- **📺 时间线**: 浏览所有共同回忆的时间线
-- **🤖 AI总结**: 自动生成周/月/年度总结
-- **🔐 数据安全**: JWT认证、隐私保护
+### 🎉 纪念日管理
+- 重要日期提醒
+- 倒计时显示
 
-## 🏗️ 技术栈
+### 🤖 AI 智能总结
+- 自动生成周/月/年度回忆总结
+- 分析你们的感情状态
 
-### 前端
-- Vue 3（组合式API）
-- Vite 4
-- Tailwind CSS 3
-- Pinia 2（状态管理）
-- Vue Router 4（路由）
-- Axios（HTTP 请求）
-- date-fns（日期格式化）
+### 👫 情侣绑定
+- 通过邮箱邀请另一半
+- 生成绑定码完成配对
+- 安全的绑定码机制（24小时过期）
 
-### 后端
-- Node.js + Express 4
-- sql.js（SQLite WebAssembly）
-- JWT 认证（jsonwebtoken）
-- bcryptjs（密码加密）
-- Multer（文件上传）
-- Joi 风格参数校验
+### 📺 时间线
+- 查看所有互动记录
+- 类似朋友圈的时间线展示
 
-## 📦 项目结构
+## 🛡️ 安全特性
 
-```
-love_app/
-├── backend/              # 后端应用
-│   ├── src/
-│   │   ├── config/      # 配置文件（db.js, env.js）
-│   │   ├── controllers/ # 业务逻辑
-│   │   ├── models/      # 数据模型
-│   │   ├── routes/      # API路由
-│   │   ├── middleware/  # 中间件（auth, couple）
-│   │   ├── utils/       # 工具函数
-│   │   ├── db/          # 数据库迁移
-│   │   └── server.js    # 主服务器文件
-│   ├── data/            # SQLite 数据库文件
-│   ├── uploads/         # 上传文件夹
-│   ├── package.json
-│   └── .env.example
-│
-├── frontend/            # 前端应用
-│   ├── src/
-│   │   ├── views/       # 页面视图
-│   │   ├── stores/      # Pinia状态管理
-│   │   ├── services/    # API服务
-│   │   ├── router/      # 路由配置
-│   │   ├── App.vue      # 根组件
-│   │   ├── main.js      # 入口文件
-│   │   └── style.css    # 全局样式
-│   ├── index.html
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   └── package.json
-│
-├── docs/                # 项目文档
-└── README.md
-```
+### 已实现的安全措施
+- ✅ **强密码要求**：至少8位，包含大小写字母和数字
+- ✅ **JWT 认证**：2小时过期时间
+- ✅ **管理员权限**：Admin 端点需要管理员角色
+- ✅ **参数化查询**：使用 sql.js 原生参数化查询防止 SQL 注入
+- ✅ **事务支持**：关键操作使用事务确保数据一致性
+- ✅ **输入验证**：所有用户输入都经过验证和清理
+- ✅ **CORS 配置**：生产环境限制允许的来源
+- ✅ **速率限制**：防止暴力攻击
+- ✅ **数据库索引**：优化查询性能
+
+### 安全审计结果
+项目已经过全面安全审计，修复了以下问题：
+1. JWT 密钥已更换为加密安全的随机密钥
+2. Admin 端点添加了管理员权限检查
+3. SQL 查询使用原生参数化查询
+4. 添加了数据库事务支持
+5. 优化了 CORS 配置
+6. 增强了密码强度要求
 
 ## 🚀 快速开始
 
-### 前置要求
-- Node.js >= 16
+### 环境要求
+- Node.js >= 18
+- npm 或 yarn
 
-### 1. 后端设置
+### 安装步骤
 
+1. **克隆项目**
 ```bash
-# 进入后端目录
+git clone <repository-url>
+cd love_app
+```
+
+2. **安装后端依赖**
+```bash
 cd backend
-
-# 安装依赖
 npm install
-
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，设置 JWT_SECRET（至少16个字符）
-
-# 启动服务器
-npm run dev
 ```
 
-后端将运行在 `http://localhost:3000`，数据库会在首次启动时自动创建。
-
-### 2. 前端设置
-
+3. **配置环境变量**
 ```bash
-# 进入前端目录
-cd frontend
+cp .env.example .env
+# 编辑 .env 文件，配置以下变量：
+# - PORT: 服务器端口（默认3000）
+# - DB_PATH: 数据库文件路径
+# - JWT_SECRET: JWT 密钥（已自动生成）
+# - ALLOWED_ORIGINS: 允许的前端来源
+```
 
-# 安装依赖
+4. **安装前端依赖**
+```bash
+cd ../frontend
 npm install
+```
 
-# 启动开发服务器
+5. **启动开发服务器**
+
+后端：
+```bash
+cd backend
 npm run dev
 ```
 
-前端将运行在 `http://localhost:5173`，自动代理 `/api` 请求到后端。
-
-## 🗄️ 数据库说明
-
-本项目使用 **SQLite**（通过 sql.js WebAssembly 引擎），无需安装任何数据库服务。数据库文件存储在 `backend/data/couple_diary.db`，首次启动时自动创建。
-
-### 数据库表结构
-
-| 表名 | 说明 |
-|------|------|
-| users | 用户信息 |
-| couples | 情侣关系 |
-| diary_entries | 日记条目 |
-| timeline_feed | 时间线事件 |
-| ai_summaries | AI 生成的总结 |
-
-### 配置 .env 文件
-
-```env
-PORT=3000
-NODE_ENV=development
-DB_PATH=./data/couple_diary.db
-JWT_SECRET=your_secret_key_at_least_16_chars
-ALLOWED_ORIGINS=http://localhost:5173
+前端：
+```bash
+cd frontend
+npm run dev
 ```
 
-## 📖 API 文档
+6. **访问应用**
+- 前端：http://localhost:5173
+- 后端 API：http://localhost:3000
 
-### 用户相关
+## 📁 项目结构
 
-#### 注册
 ```
-POST /api/users/register
-Content-Type: application/json
+love_app/
+├── backend/                 # 后端服务
+│   ├── src/
+│   │   ├── config/         # 配置文件
+│   │   │   ├── db.js      # 数据库连接和操作
+│   │   │   └── env.js     # 环境变量配置
+│   │   ├── controllers/    # 控制器
+│   │   │   ├── adminController.js  # 管理员操作
+│   │   │   ├── diaryController.js  # 日记操作
+│   │   │   └── userController.js   # 用户操作
+│   │   ├── middleware/     # 中间件
+│   │   │   ├── admin.js   # 管理员权限检查
+│   │   │   └── auth.js    # JWT 认证
+│   │   ├── models/         # 数据模型
+│   │   │   ├── ai.js      # AI 总结模型
+│   │   │   ├── diary.js   # 日记模型
+│   │   │   └── user.js    # 用户模型
+│   │   ├── routes/         # 路由定义
+│   │   │   ├── diaryRoutes.js  # 日记路由
+│   │   │   └── userRoutes.js   # 用户路由
+│   │   ├── utils/          # 工具函数
+│   │   │   ├── auth.js    # 认证工具
+│   │   │   ├── logger.js  # 日志工具
+│   │   │   └── validation.js  # 验证工具
+│   │   └── server.js       # 服务器入口
+│   ├── data/               # 数据库文件
+│   ├── uploads/            # 上传文件
+│   └── package.json
+├── frontend/                # 前端应用
+│   ├── src/
+│   │   ├── views/          # 页面组件
+│   │   │   ├── Home.vue           # 首页
+│   │   │   ├── Login.vue          # 登录页
+│   │   │   ├── Register.vue       # 注册页
+│   │   │   ├── Dashboard.vue      # 仪表板
+│   │   │   ├── DiaryEditor.vue    # 日记编辑器
+│   │   │   ├── Timeline.vue       # 时间线
+│   │   │   └── CoupleBinding.vue  # 情侣绑定
+│   │   ├── stores/         # Pinia 状态管理
+│   │   │   ├── auth.js    # 认证状态
+│   │   │   └── diary.js   # 日记状态
+│   │   ├── services/       # API 服务
+│   │   │   ├── api.js     # API 客户端
+│   │   │   └── index.js   # 服务导出
+│   │   ├── router/         # 路由配置
+│   │   │   └── index.js
+│   │   ├── App.vue         # 根组件
+│   │   └── main.js         # 入口文件
+│   └── package.json
+└── README.md
+```
 
+## 🔧 API 文档
+
+### 认证相关
+
+#### POST /api/users/register
+注册新用户
+
+**请求体：**
+```json
 {
-  "username": "张三",
-  "email": "zhangsan@example.com",
-  "password": "password123"
+  "username": "string (2-30字符)",
+  "email": "string (有效邮箱)",
+  "password": "string (至少8位，包含大小写字母和数字)"
 }
 ```
 
-#### 登录
-```
-POST /api/users/login
+**响应：**
+```json
 {
-  "email": "zhangsan@example.com",
-  "password": "password123"
-}
-
-Response:
-{
-  "id": 1,
-  "username": "张三",
-  "email": "zhangsan@example.com",
-  "token": "eyJhbGciOiJIUzI1NiIs..."
+  "success": true,
+  "message": "User registered successfully",
+  "user": {
+    "id": 1,
+    "username": "testuser",
+    "email": "test@example.com"
+  }
 }
 ```
 
-#### 获取个人资料
-```
-GET /api/users/profile
-Authorization: Bearer {token}
-```
+#### POST /api/users/login
+用户登录
 
-### 情侣相关
-
-#### 初始化情侣关系
-```
-POST /api/users/couple/initialize
-Authorization: Bearer {token}
+**请求体：**
+```json
 {
-  "user2Email": "lisi@example.com"
-}
-
-Response:
-{
-  "message": "Couple created...",
-  "bindCode": "A1B2C3D4",
-  "expiresAt": "2024-05-30T10:00:00Z"
+  "email": "string",
+  "password": "string"
 }
 ```
 
-#### 绑定情侣
-```
-POST /api/users/couple/bind
-Authorization: Bearer {token}
+**响应：**
+```json
 {
-  "bindCode": "A1B2C3D4"
+  "success": true,
+  "token": "jwt-token",
+  "user": {
+    "id": 1,
+    "username": "testuser",
+    "email": "test@example.com"
+  }
 }
-```
-
-#### 获取配对伴侣信息
-```
-GET /api/users/couple
-Authorization: Bearer {token}
 ```
 
 ### 日记相关
 
-#### 创建日记
+#### GET /api/diary
+获取日记列表
+
+**请求头：**
 ```
-POST /api/diary
-Authorization: Bearer {token}
+Authorization: Bearer <token>
+```
+
+**查询参数：**
+- `limit`: 每页数量（默认20）
+- `offset`: 偏移量（默认0）
+
+#### POST /api/diary
+创建日记
+
+**请求体：**
+```json
 {
-  "title": "我们的约会",
-  "content": "今天在咖啡馆度过了美好的午后...",
-  "mood": "happy",
-  "images": ["base64_encoded_image_1", "base64_encoded_image_2"]
+  "title": "string (可选)",
+  "content": "string (必填)",
+  "mood": "happy|sad|angry|neutral|loved|excited",
+  "images": ["string"] // 图片URL数组
 }
 ```
 
-#### 获取日记列表
-```
-GET /api/diary?limit=20&offset=0
-Authorization: Bearer {token}
-```
+### 情侣相关
 
-#### 获取单个日记
-```
-GET /api/diary/:entryId
-Authorization: Bearer {token}
-```
+#### POST /api/users/couple/initialize
+创建情侣关系
 
-#### 更新日记
-```
-PUT /api/diary/:entryId
-Authorization: Bearer {token}
+**请求体：**
+```json
 {
-  "title": "修改标题",
-  "content": "修改内容",
-  "mood": "loved",
-  "images": []
+  "user2Email": "string (另一半的邮箱)"
 }
 ```
 
-#### 删除日记
-```
-DELETE /api/diary/:entryId
-Authorization: Bearer {token}
-```
+#### POST /api/users/couple/bind
+绑定情侣关系
 
-#### 获取时间线
-```
-GET /api/diary/timeline?limit=30&offset=0
-Authorization: Bearer {token}
+**请求体：**
+```json
+{
+  "bindCode": "string (6-8位绑定码)"
+}
 ```
 
-#### 获取AI总结
-```
-GET /api/diary/ai-summary?period=week
-Authorization: Bearer {token}
+## 🎨 前端设计
 
-period: 'week' | 'month' | 'year'
-```
+### 设计理念
+- **温馨浪漫**：粉色系配色，圆润的卡片设计
+- **现代简洁**：毛玻璃效果，流畅的动画
+- **响应式设计**：适配各种屏幕尺寸
+- **优秀交互**：悬停效果，加载动画
 
-### 管理接口（需要认证）
+### 技术栈
+- **Vue 3**：Composition API
+- **Vite**：快速构建工具
+- **Tailwind CSS**：原子化 CSS
+- **Pinia**：状态管理
+- **Vue Router**：路由管理
 
-#### 查看数据库信息
-```
-GET /api/users/admin/db-info
-Authorization: Bearer {token}
-```
+## 📊 数据库设计
 
-#### 清空数据库
-```
-POST /api/users/admin/clear-db
-Authorization: Bearer {token}
-```
+### 表结构
 
-## 🎨 页面说明
+#### users 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 主键 |
+| username | TEXT | 用户名 |
+| email | TEXT | 邮箱 |
+| password_hash | TEXT | 密码哈希 |
+| avatar_url | TEXT | 头像URL |
+| is_admin | INTEGER | 是否管理员 |
+| created_at | DATETIME | 创建时间 |
 
-| 页面 | 路由 | 功能 |
-|-----|------|------|
-| 首页 | `/` | 产品介绍 |
-| 登录 | `/login` | 用户登录 |
-| 注册 | `/register` | 创建新账户 |
-| 配对 | `/couple-binding` | 情侣配对 |
-| 仪表板 | `/dashboard` | 日记列表和AI总结 |
-| 日记编辑 | `/diary/new` | 创建新日记 |
-| 日记编辑 | `/diary/:id` | 编辑已有日记 |
-| 时间线 | `/timeline` | 浏览事件时间线 |
+#### couples 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 主键 |
+| user1_id | INTEGER | 用户1 ID |
+| user2_id | INTEGER | 用户2 ID |
+| bind_code | TEXT | 绑定码 |
+| bind_code_expires_at | DATETIME | 绑定码过期时间 |
+| is_bound | INTEGER | 是否已绑定 |
+| bound_at | DATETIME | 绑定时间 |
+| anniversary | DATE | 纪念日 |
 
-## 🔐 安全特性
+#### diary_entries 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 主键 |
+| couple_id | INTEGER | 情侣 ID |
+| author_id | INTEGER | 作者 ID |
+| title | TEXT | 标题 |
+| content | TEXT | 内容 |
+| mood | TEXT | 心情 |
+| images | TEXT | 图片JSON |
+| ai_summary | TEXT | AI总结 |
+| created_at | DATETIME | 创建时间 |
 
-- ✅ JWT Token 认证（30天有效期）
-- ✅ 密码哈希加密（bcryptjs）
-- ✅ 数据隐私隔离（情侣之间）
-- ✅ 管理员接口认证保护
-- ✅ CORS 白名单配置
-- ✅ 请求速率限制（通用 100/15min，认证 10/15min）
-- ✅ 邀请码使用 crypto 安全生成
-- ✅ 防止自绑定和重复配对
-- ✅ 前端 401 拦截器自动处理过期 token
+### 索引优化
+- `idx_diary_couple_created`: 加速按情侣查询日记
+- `idx_timeline_entry_id`: 加速时间线删除
+- `idx_couples_is_bound`: 加速绑定状态查询
 
-## 📱 使用流程
+## 🚀 部署
 
-1. **注册账户** - 创建个人账户
-2. **生成配对码** - 生成24小时有效的邀请码
-3. **分享配对码** - 将码分享给伴侣
-4. **完成配对** - 伴侣输入码完成配对
-5. **开始记录** - 创建日记、上传照片、选择心情
-6. **查看总结** - 查看AI生成的回忆总结
-7. **浏览时间线** - 回顾所有重要时刻
+### 生产环境配置
 
-## 🛠️ 开发指南
-
-### 添加新API端点
-
-1. 在 `controllers/` 中创建控制器函数
-2. 在 `models/` 中添加数据库操作
-3. 在 `routes/` 中定义路由
-4. 在 `frontend/services/` 中添加API调用
-
-### 添加新页面
-
-1. 在 `frontend/src/views/` 中创建 `.vue` 文件
-2. 在 `router/index.js` 中添加路由
-3. 使用 `useAuthStore` 和 `useDiaryStore` 管理状态
-
-## 🐛 故障排除
-
-### 401未授权错误
-- 检查token是否存储在localStorage
-- 验证token未过期（默认30天）
-- 前端会自动清除过期token并跳转登录页
-
-### CORS错误
-- 确保前端运行在 `ALLOWED_ORIGINS` 配置的来源
-- 检查 `backend/.env` 中的 `ALLOWED_ORIGINS` 配置
-
-### 数据库重置
+1. **设置环境变量**
 ```bash
-# 删除数据库文件后重启后端即可重新创建
-rm backend/data/couple_diary.db
+NODE_ENV=production
+JWT_SECRET=<strong-random-secret>
+ALLOWED_ORIGINS=https://yourdomain.com
 ```
 
-## 📚 相关资源
+2. **构建前端**
+```bash
+cd frontend
+npm run build
+```
 
-- [Vue 3 文档](https://v3.vuejs.org/)
-- [Express 文档](https://expressjs.com/)
-- [sql.js 文档](https://sql.js.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
+3. **启动服务**
+```bash
+cd backend
+npm start
+```
+
+### Railway 部署
+项目已配置 `railway.json`，可直接部署到 Railway。
+
+### Vercel 部署
+前端可部署到 Vercel，后端需要单独部署。
+
+## 🤝 贡献指南
+
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+## 📝 更新日志
+
+### v2.0.0 (2026-05-30)
+- 🔒 安全审计和修复
+  - 更换 JWT 密钥为加密安全的随机密钥
+  - 添加管理员权限检查
+  - 使用原生参数化查询
+  - 添加事务支持
+- 🎨 前端设计改进
+  - 全新的首页设计
+  - 改进的登录/注册页面
+  - 优化的仪表板布局
+- 📊 数据库优化
+  - 添加缺失的索引
+  - 优化查询性能
+- 📚 文档更新
+  - 完整的 API 文档
+  - 详细的部署指南
+
+### v1.0.0 (2026-05-29)
+- 🎉 初始版本发布
+- 📝 日记系统
+- 👫 情侣绑定
+- 🤖 AI 总结
+- 📺 时间线
 
 ## 📄 许可证
 
 MIT License
 
+## 💕 致谢
+
+感谢所有为这个项目做出贡献的人！
+
 ---
 
-**祝您使用愉快！记录你们的每一刻💕**
+**用爱记录，用心珍藏** 💕

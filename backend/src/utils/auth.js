@@ -19,7 +19,7 @@ export function generateToken(userId) {
   }
 
   return jwt.sign({ userId }, secret, {
-    expiresIn: '30d',
+    expiresIn: '2h',  // 缩短到2小时
   });
 }
 
@@ -38,11 +38,20 @@ export function generateBindCode() {
 
 export function validatePasswordStrength(password) {
   const errors = [];
-  
-  if (password.length < 6) {
-    errors.push('密码至少需要6个字符');
+
+  if (password.length < 8) {
+    errors.push('密码至少需要8个字符');
   }
-  
+  if (!/(?=.*[a-z])/.test(password)) {
+    errors.push('密码必须包含小写字母');
+  }
+  if (!/(?=.*[A-Z])/.test(password)) {
+    errors.push('密码必须包含大写字母');
+  }
+  if (!/(?=.*\d)/.test(password)) {
+    errors.push('密码必须包含数字');
+  }
+
   return {
     isValid: errors.length === 0,
     errors

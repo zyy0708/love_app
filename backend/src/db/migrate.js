@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   avatar_url TEXT,
+  is_admin INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -79,6 +80,9 @@ CREATE INDEX IF NOT EXISTS idx_diary_author ON diary_entries(author_id);
 CREATE INDEX IF NOT EXISTS idx_diary_created ON diary_entries(created_at);
 CREATE INDEX IF NOT EXISTS idx_timeline_couple ON timeline_feed(couple_id);
 CREATE INDEX IF NOT EXISTS idx_timeline_created ON timeline_feed(created_at);
+CREATE INDEX IF NOT EXISTS idx_timeline_entry_id ON timeline_feed(entry_id);
+CREATE INDEX IF NOT EXISTS idx_diary_couple_created ON diary_entries(couple_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_couples_is_bound ON couples(is_bound);
 `;
 
 async function migrate() {
