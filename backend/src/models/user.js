@@ -54,7 +54,7 @@ export async function createCouple(user1Id, user2Id) {
 
 export async function bindCouple(bindCode, userId) {
   const couple = await get(
-    "SELECT * FROM couples WHERE bind_code = ? AND datetime(bind_code_expires_at) > datetime('now')",
+    "SELECT * FROM couples WHERE bind_code = ? AND bind_code_expires_at > NOW()",
     [bindCode]
   );
 
@@ -66,8 +66,8 @@ export async function bindCouple(bindCode, userId) {
     throw new Error('You are not part of this couple');
   }
 
-  run(
-    "UPDATE couples SET is_bound = 1, bound_at = datetime('now'), bind_code_expires_at = NULL WHERE id = ?",
+  await run(
+    "UPDATE couples SET is_bound = 1, bound_at = NOW(), bind_code_expires_at = NULL WHERE id = ?",
     [couple.id]
   );
 

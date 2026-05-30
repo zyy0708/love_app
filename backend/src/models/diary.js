@@ -17,7 +17,7 @@ export async function createDiaryEntry(coupleId, authorId, title, content, mood,
     const entryId = result.lastInsertRowid;
 
     const preview = content.substring(0, 100);
-    run(
+    await run(
       'INSERT INTO timeline_feed (couple_id, entry_id, entry_type, title, preview, actor_id) VALUES (?, ?, ?, ?, ?, ?)',
       [coupleId, entryId, 'diary', title || '无标题', preview, authorId]
     );
@@ -71,9 +71,9 @@ export async function getDiaryEntryById(entryId, coupleId) {
 export async function updateDiaryEntry(entryId, coupleId, title, content, mood, images) {
   const imagesJson = JSON.stringify(images || []);
 
-  run(`
+  await run(`
     UPDATE diary_entries
-    SET title = ?, content = ?, mood = ?, images = ?, updated_at = datetime('now')
+    SET title = ?, content = ?, mood = ?, images = ?, updated_at = NOW()
     WHERE id = ? AND couple_id = ?
   `, [title, content, mood, imagesJson, entryId, coupleId]);
 
@@ -94,9 +94,9 @@ export async function deleteDiaryEntry(entryId, coupleId) {
     beginTransaction();
 
     // 先删除时间线记录
-    run('DELETE FROM timeline_feed WHERE entry_id = ?', [entryId]);
+    await run('DELETE FROM timeline_feed WHERE entry_id = ?', [entryId]);
     // 再删除日记条目
-    run('DELETE FROM diary_entries WHERE id = ? AND couple_id = ?', [entryId, coupleId]);
+    await run('DELETE FROM diary_entries WHERE id = ? AND couple_id = ?', [entryId, coupleId]);
 
     commit();
     return { id: entryId };

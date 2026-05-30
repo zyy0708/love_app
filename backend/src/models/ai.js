@@ -33,12 +33,12 @@ export async function cacheAISummary(coupleId, summaryType, period, content, ent
   );
   
   if (existing) {
-    run(
-      'UPDATE ai_summaries SET content = ?, entry_ids = ?, created_at = datetime("now") WHERE id = ?',
+    await run(
+      'UPDATE ai_summaries SET content = ?, entry_ids = ?, created_at = NOW() WHERE id = ?',
       [content, entryIdsJson, existing.id]
     );
   } else {
-    run(
+    await run(
       'INSERT INTO ai_summaries (couple_id, summary_type, period, content, entry_ids) VALUES (?, ?, ?, ?, ?)',
       [coupleId, summaryType, period, content, entryIdsJson]
     );
