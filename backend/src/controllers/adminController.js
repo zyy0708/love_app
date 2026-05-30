@@ -6,10 +6,10 @@ import { get, all, run, beginTransaction, commit, rollback } from '../config/db.
  */
 export const getDbInfo = async (req, res) => {
   try {
-    const users = all('SELECT id, username, email, avatar_url, is_admin, created_at FROM users');
-    const couples = all('SELECT id, user1_id, user2_id, is_bound, bound_at, anniversary, created_at FROM couples');
-    const entries = all('SELECT id, couple_id, author_id, title, mood, created_at FROM diary_entries');
-    const summaries = all('SELECT id, couple_id, summary_type, period, created_at FROM ai_summaries');
+    const users = await all('SELECT id, username, email, avatar_url, is_admin, created_at FROM users');
+    const couples = await all('SELECT id, user1_id, user2_id, is_bound, bound_at, anniversary, created_at FROM couples');
+    const entries = await all('SELECT id, couple_id, author_id, title, mood, created_at FROM diary_entries');
+    const summaries = await all('SELECT id, couple_id, summary_type, period, created_at FROM ai_summaries');
 
     res.json({
       success: true,
@@ -44,11 +44,11 @@ export const clearDatabase = async (req, res) => {
     beginTransaction();
 
     // 按照外键依赖顺序删除
-    run('DELETE FROM ai_summaries');
-    run('DELETE FROM timeline_feed');
-    run('DELETE FROM diary_entries');
-    run('DELETE FROM couples');
-    run('DELETE FROM users');
+    await run('DELETE FROM ai_summaries');
+    await run('DELETE FROM timeline_feed');
+    await run('DELETE FROM diary_entries');
+    await run('DELETE FROM couples');
+    await run('DELETE FROM users');
 
     commit();
 

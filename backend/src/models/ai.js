@@ -44,14 +44,14 @@ export async function cacheAISummary(coupleId, summaryType, period, content, ent
     );
   }
 
-  return get(
+  return await get(
     'SELECT * FROM ai_summaries WHERE couple_id = ? AND summary_type = ? AND period = ?',
     [coupleId, summaryType, period]
   );
 }
 
 export async function getAISummary(coupleId, summaryType, period) {
-  return get(
+  return await get(
     'SELECT * FROM ai_summaries WHERE couple_id = ? AND summary_type = ? AND period = ?',
     [coupleId, summaryType, period]
   );

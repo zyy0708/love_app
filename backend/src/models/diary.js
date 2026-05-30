@@ -10,7 +10,7 @@ export async function createDiaryEntry(coupleId, authorId, title, content, mood,
   try {
     beginTransaction();
 
-    const result = run(
+    const result = await run(
       'INSERT INTO diary_entries (couple_id, author_id, title, content, mood, images) VALUES (?, ?, ?, ?, ?, ?)',
       [coupleId, authorId, title, content, mood, imagesJson]
     );
@@ -25,7 +25,7 @@ export async function createDiaryEntry(coupleId, authorId, title, content, mood,
     commit();
 
     // 返回完整的日记条目
-    const entry = get(`
+    const entry = await get(`
       SELECT d.*, u.username, u.avatar_url
       FROM diary_entries d
       LEFT JOIN users u ON d.author_id = u.id
@@ -43,7 +43,7 @@ export async function createDiaryEntry(coupleId, authorId, title, content, mood,
  * 获取日记列表
  */
 export async function getDiaryEntries(coupleId, limit = 20, offset = 0) {
-  return all(`
+  return await all(`
     SELECT d.*, u.username, u.avatar_url
     FROM diary_entries d
     LEFT JOIN users u ON d.author_id = u.id
@@ -57,7 +57,7 @@ export async function getDiaryEntries(coupleId, limit = 20, offset = 0) {
  * 根据 ID 获取日记条目
  */
 export async function getDiaryEntryById(entryId, coupleId) {
-  return get(`
+  return await get(`
     SELECT d.*, u.username, u.avatar_url
     FROM diary_entries d
     LEFT JOIN users u ON d.author_id = u.id
@@ -77,7 +77,7 @@ export async function updateDiaryEntry(entryId, coupleId, title, content, mood, 
     WHERE id = ? AND couple_id = ?
   `, [title, content, mood, imagesJson, entryId, coupleId]);
 
-  return get(`
+  return await get(`
     SELECT d.*, u.username, u.avatar_url
     FROM diary_entries d
     LEFT JOIN users u ON d.author_id = u.id
@@ -110,7 +110,7 @@ export async function deleteDiaryEntry(entryId, coupleId) {
  * 获取时间线动态
  */
 export async function getTimelineFeed(coupleId, limit = 30, offset = 0) {
-  return all(`
+  return await all(`
     SELECT t.*, u.username, u.avatar_url
     FROM timeline_feed t
     LEFT JOIN users u ON t.actor_id = u.id

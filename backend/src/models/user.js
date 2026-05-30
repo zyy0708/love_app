@@ -3,7 +3,7 @@ import { hashPassword, comparePassword, generateToken, generateBindCode } from '
 
 export async function registerUser(username, email, password) {
   const hashedPassword = hashPassword(password);
-  const result = run(
+  const result = await run(
     'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
     [username, email, hashedPassword]
   );
@@ -16,7 +16,7 @@ export async function registerUser(username, email, password) {
 }
 
 export async function loginUser(email, password) {
-  const user = get('SELECT id, email, password_hash, username FROM users WHERE email = ?', [email]);
+  const user = await get('SELECT id, email, password_hash, username FROM users WHERE email = ?', [email]);
   
   if (!user) {
     throw new Error('User not found');
@@ -33,27 +33,27 @@ export async function loginUser(email, password) {
 }
 
 export async function getUserById(userId) {
-  return get('SELECT id, username, email, avatar_url, created_at FROM users WHERE id = ?', [userId]);
+  return await get('SELECT id, username, email, avatar_url, created_at FROM users WHERE id = ?', [userId]);
 }
 
 export async function getUserByEmail(email) {
-  return get('SELECT id, username, email, avatar_url, created_at FROM users WHERE email = ?', [email]);
+  return await get('SELECT id, username, email, avatar_url, created_at FROM users WHERE email = ?', [email]);
 }
 
 export async function createCouple(user1Id, user2Id) {
   const bindCode = generateBindCode();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-  const result = run(
+  const result = await run(
     'INSERT INTO couples (user1_id, user2_id, bind_code, bind_code_expires_at) VALUES (?, ?, ?, ?)',
     [user1Id, user2Id, bindCode, expiresAt]
   );
 
-  return get('SELECT * FROM couples WHERE id = ?', [result.lastInsertRowid]);
+  return await get('SELECT * FROM couples WHERE id = ?', [result.lastInsertRowid]);
 }
 
 export async function bindCouple(bindCode, userId) {
-  const couple = get(
+  const couple = await get(
     "SELECT * FROM couples WHERE bind_code = ? AND datetime(bind_code_expires_at) > datetime('now')",
     [bindCode]
   );
@@ -71,11 +71,11 @@ export async function bindCouple(bindCode, userId) {
     [couple.id]
   );
 
-  return get('SELECT * FROM couples WHERE id = ?', [couple.id]);
+  return await get('SELECT * FROM couples WHERE id = ?', [couple.id]);
 }
 
 export async function getCoupleById(coupleId) {
-  return get(`
+  return await get(`
     SELECT c.*, 
       u1.username as user1_username, u1.avatar_url as user1_avatar,
       u2.username as user2_username, u2.avatar_url as user2_avatar
@@ -87,7 +87,7 @@ export async function getCoupleById(coupleId) {
 }
 
 export async function getCoupleByUserId(userId) {
-  return get(`
+  return await get(`
     SELECT c.*,
       u1.username as user1_username, u1.avatar_url as user1_avatar,
       u2.username as user2_username, u2.avatar_url as user2_avatar
@@ -99,7 +99,7 @@ export async function getCoupleByUserId(userId) {
 }
 
 export async function getCoupleByEitherUserId(userId1, userId2) {
-  return get(`
+  return await get(`
     SELECT id FROM couples
     WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)
     AND is_bound = 1
