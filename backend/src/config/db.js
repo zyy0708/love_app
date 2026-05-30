@@ -8,22 +8,27 @@ let db;
 
 if (usePostgres) {
   // PostgreSQL 实现
+  console.log('Connecting to PostgreSQL...');
   const pg = await import('pg');
   const { Pool } = pg.default;
 
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? true : false
+    ssl: { rejectUnauthorized: false },
+    max: 10,
+    connectionTimeoutMillis: 15000
   });
 
   // 测试连接
   try {
     const client = await pool.connect();
-    console.log('✓ Connected to PostgreSQL');
+    const result = await client.query('SELECT NOW() as now');
+    console.log('✓ Connected to PostgreSQL at:', result.rows[0].now);
     client.release();
   } catch (err) {
-    console.error('Failed to connect to PostgreSQL:', err.message);
-    process.exit(1);
+    console.error('PostgreSQL connection error:', err.message);
+    console.error('Error code:', err.code);
+    // 不退出进程，让服务器继续启动
   }
 
   // 转换 SQL 的 ? 占位符为 PostgreSQL 的 $1, $2, ...
