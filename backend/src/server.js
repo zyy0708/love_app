@@ -70,30 +70,26 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:5173'];
+  : ['http://localhost:5173', 'http://localhost:3000'];
 
-// CORS 只应用于 API 路由
+// CORS 配置 - 开发环境允许所有来源
 const corsOptions = {
-  origin: (origin, callback) => {
-    // 允许没有 origin 的请求（如 Postman、curl、同源请求）
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
-// CORS 错误处理
-app.use((err, req, res, next) => {
-  if (err.message === 'Not allowed by CORS') {
-    return res.status(403).json({ error: 'CORS not allowed' });
-  }
-  next(err);
-});
+// 生产环境使用白名单
+if (process.env.NODE_ENV === 'production') {
+  corsOptions.origin = (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  };
+}
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
