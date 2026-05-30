@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import userRoutes from './routes/userRoutes.js';
 import diaryRoutes from './routes/diaryRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/auth.js';
-import { exec } from './config/db.js';
+import { initDatabase, exec } from './config/db.js';
 
 dotenv.config();
 
@@ -118,6 +118,9 @@ app.get('*', (req, res) => {
 async function startServer() {
   try {
     console.log(`Database: ${usePostgres ? 'PostgreSQL' : 'SQLite'}`);
+
+    // 初始化数据库连接
+    await initDatabase();
 
     // Run migrations
     console.log('Running database migrations...');
